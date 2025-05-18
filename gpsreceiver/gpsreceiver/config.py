@@ -33,7 +33,7 @@ import numpy as np
 # we're trying to correlate 1 ms of a received signal with a local replica of a
 # C/A PRN code we can simply repeat each code chip twice to get a signal of the
 # same length. This avoids needing to e.g. pad the local replica with zeroes.
-SAMPLES_PER_MILLISECOND: int = 2046
+SAMPLES_PER_MILLISECOND: int = 5115
 
 # Acquisition
 
