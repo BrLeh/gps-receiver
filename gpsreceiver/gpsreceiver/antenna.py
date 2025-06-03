@@ -5,6 +5,7 @@ from pathlib import Path
 
 import numpy as np
 from rtlsdr import RtlSdr
+from SDRPlay_wrappy.radio import MyRadio
 
 from .config import SAMPLES_PER_MILLISECOND
 from .constants import L1_FREQUENCY, SAMPLES_PER_SECOND, SECONDS_PER_SAMPLE
@@ -111,6 +112,61 @@ class RtlSdrAntenna(Antenna):
         rtl_sdr.read_samples_async(self._on_samples, 2048)
 
     def _on_samples(self, samples: np.ndarray, _: RtlSdr) -> None:
+        # Concatenate the leftover samples (if any) and the new samples.
+        now = datetime.now(timezone.utc)
+        samples_ = Samples(
+            end_timestamp=now,
+            samples=samples,
+            start_timestamp=now - timedelta(seconds=len(samples) * SECONDS_PER_SAMPLE),
+        )
+        self._samples = samples_ if self._samples is None else self._samples + samples_
+
+        # While we have enough samples, forward them to the receiver.
+        while len(self._samples.samples) > SAMPLES_PER_MILLISECOND:
+            self._receiver.handle_1ms_of_samples(
+                self._samples[0:SAMPLES_PER_MILLISECOND]
+            )
+            self._samples = self._samples[SAMPLES_PER_MILLISECOND:]
+
+
+class SDRPlayAntenna(Antenna):
+    """An antenna backed by an SDRPlay receiver
+    
+    It's assumed that a single SDR is connected to the computer.
+    """
+
+    def __init__(self, receiver:Receiver):
+        super().__init__(receiver)
+
+        # SDRplay API requires that you receive a specific number of samples at a
+        # time. 
+        # This attribute is used to store the leftover samples which are
+        # prepended to the next chunk of samples and forwarded to the receiver.
+
+        self._samples: Samples | None = None
+
+    def start(self) -> None:
+        #SDR Fixed parameters
+        rspdx = MyRadio()
+        rspdx.get_devices()
+        rspdx.connect()
+        rspdx.set_frequency(L1_FREQUENCY)
+        rspdx.set_bandwidth(5000)
+        rspdx.set_samplingRate(5115000.0)
+        rspdx.select_antenna(1)
+        rspdx.set_biasT(1)
+        rspdx.set_gaindB(20)
+        rspdx.set_LNAstate(0)
+        rspdx.set_agcStatus(0)
+        rspdx.set_agcSensitivity(-60)
+
+        signal.signal(signal.SIGINT, lambda signal, frame: rspdx.stop())
+
+        #Callback method defines what function will receive the samples
+        rspdx.start()
+        rspdx.handler.callback(self._on_samples)
+
+    def _on_samples(self, samples: np.ndarray) -> None:
         # Concatenate the leftover samples (if any) and the new samples.
         now = datetime.now(timezone.utc)
         samples_ = Samples(

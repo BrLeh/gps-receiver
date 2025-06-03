@@ -4,7 +4,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from .acquirer import MainProcessAcquirer, SubprocessAcquirer
-from .antenna import FileAntenna, RtlSdrAntenna
+from .antenna import FileAntenna, RtlSdrAntenna, SDRPlayAntenna
 from .receiver import Receiver
 
 logging.basicConfig(
@@ -12,12 +12,16 @@ logging.basicConfig(
 )
 
 argument_parser = ArgumentParser()
-argument_parser.add_argument("-f", "--file", help="the path to the input file to use")
+argument_parser.add_argument(
+    "-f", "--file", help="the path to the input file to use")
 argument_parser.add_argument(
     "-t", "--time", help="the start time of the input file, in Unix time"
 )
 argument_parser.add_argument(
     "--rtl-sdr", action="store_true", help="run in real time from an RTL-SDR"
+)
+argument_parser.add_argument(
+    "--sdrplay", action="store_true", help="run in real time from an SDRPlay SDR"
 )
 argument_parser.add_argument(
     "-g", "--gain", type=int, default=20, help="front-end gain for RTL-SDR (default 20)"
@@ -36,6 +40,9 @@ try:
         RtlSdrAntenna(
             Receiver(SubprocessAcquirer(), run_http_server=False), gain=args.gain
         ).start()
+    elif args.sdrplay:
+        SDRPlayAntenna(Receiver(SubprocessAcquirer(),
+                       run_http_server=True)).start()
     else:
         argument_parser.print_help()
 except KeyboardInterrupt:
