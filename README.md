@@ -32,7 +32,7 @@ The `gpsreceiver` directory contains a Python package that processes samples of 
 
 ### Hardware
 
-If you'd like to record your own samples or run the receiver in real-time from an [RTL-SDR](https://www.rtl-sdr.com/about-rtl-sdr/), you'll need [a GPS antenna](https://www.sparkfun.com/products/14986) and (optionally) [a ground plate](https://www.sparkfun.com/products/17519). You'll get the best results in large, open areas with a clear view of the sky in all directions, e.g. a park.
+If you'd like to record your own samples or run the receiver in real-time from an [RTL-SDR](https://www.rtl-sdr.com/about-rtl-sdr/) or [SDRPLAY](https://www.sdrplay.com/products/), you'll need [a GPS antenna](https://www.sparkfun.com/products/14986) and (optionally) [a ground plate](https://www.sparkfun.com/products/17519). You'll get the best results in large, open areas with a clear view of the sky in all directions, e.g. a park.
 
 ### Software
 
@@ -42,6 +42,8 @@ python -m venv .env
 source .env/bin/activate
 pip install -r requirements.txt
 ```
+
+To use SDRPlay SDR in real-time, you'll need to install this [SDRPlay API Python wrapper](https://github.com/BrLeh/SDRPlay_wrapper).
 
 ## Running
 
@@ -86,6 +88,11 @@ If you'd like to record your own file:
 
 ```bash
 python -m gpsreceiver --rtl-sdr
+```
+### From an SDRPlay SDR
+
+```bash
+python -m gpsreceiver --sdrplay
 ```
 
 ## Development
